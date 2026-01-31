@@ -13,8 +13,12 @@ public:
   T current{};
 
   void update() {
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wfloat-equal"
     if(total == 0) return;
-    T const filled_length{static_cast<T>((static_cast<double>(current) / static_cast<double>(total)) * static_cast<double>(display_width))};
+    #pragma GCC diagnostic pop
+    float const ratio{static_cast<float>(current) / static_cast<float>(total)};
+    unsigned int const filled_length{static_cast<unsigned int>(ratio * static_cast<float>(display_width))};
     std::cout << '\r' << Style::start;
     for(unsigned int i{0}; i != display_width; ++i) {
       if(i < filled_length) {
@@ -26,10 +30,18 @@ public:
       }
     }
     if constexpr(SummaryText) {
-      std::cout << Style::end
-                << ' ' << std::format("{:.2f}%", (static_cast<double>(current) / static_cast<double>(total)) * 100.0)
-                << " (" << current << "/" << total << ")"
-                << std::flush;
+      // if T is a floating point type, format with 2 decimal places
+      if constexpr(std::is_floating_point_v<T>) {
+        std::cout << Style::end
+          << ' ' << std::format("{:.2f}%", (static_cast<float>(current) / static_cast<float>(total)) * 100.0f)
+          << " (" << std::format("{:.2f}", static_cast<float>(current)) << "/" << std::format("{:.2f}", static_cast<float>(total)) << ")"
+          << std::flush;
+      } else {
+        std::cout << Style::end
+          << ' ' << std::format("{:.2f}%", (static_cast<float>(current) / static_cast<float>(total)) * 100.0f)
+          << " (" << current << "/" << total << ")"
+          << std::flush;
+      }
     }
   }
 };
